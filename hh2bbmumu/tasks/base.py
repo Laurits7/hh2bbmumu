@@ -7,6 +7,6 @@ Custom base tasks.
 from columnflow.tasks.framework.base import BaseTask
 
 
-class BBMMTask(BaseTask):
+class HH2BBMUMUTask(BaseTask):
 
-    task_namespace = "bbmm"
+    task_namespace = "hh2bbmumu"

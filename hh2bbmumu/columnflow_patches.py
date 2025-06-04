@@ -18,7 +18,7 @@ def patch_bundle_repo_exclude_files():
     from columnflow.tasks.framework.remote import BundleRepo
 
     # get the relative path to CF_BASE
-    cf_rel = os.path.relpath(os.environ["CF_BASE"], os.environ["BBMM_BASE"])
+    cf_rel = os.path.relpath(os.environ["CF_BASE"], os.environ["HH2BBMUMU_BASE"])
 
     # amend exclude files to start with the relative path to CF_BASE
     exclude_files = [os.path.join(cf_rel, path) for path in BundleRepo.exclude_files]

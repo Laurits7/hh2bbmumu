@@ -29,7 +29,6 @@ from hh2bbmumu.selection.jet import jet_selection
 from hh2bbmumu.selection.muons import muon_selection
 from hh2bbmumu.util import IF_DATASET_HAS_LHE_WEIGHTS, IF_RUN_3
 
-
 np = maybe_import("numpy")
 ak = maybe_import("awkward")
 
@@ -50,7 +49,7 @@ ak = maybe_import("awkward")
     },
     produces={
         jet_selection, electron_selection, muon_selection,
-        mc_weight, pu_weight, process_ids, increment_stats,
+        mc_weight, pu_weight, process_ids, increment_stats,# category_ids,
         IF_DATASET_HAS_LHE_WEIGHTS(pdf_weights, murmuf_weights),
     },
     exposed=True,
@@ -63,7 +62,7 @@ def default(
 ) -> tuple[ak.Array, SelectionResult]:
     # ensure coffea behavior
     events = self[attach_coffea_behavior](events, **kwargs)
-
+    print(len(events), " events in the input")
     # prepare the selection results that are updated at every step
     results = SelectionResult()
 
@@ -74,6 +73,7 @@ def default(
     else:
         results += SelectionResult(steps={"json": np.ones(len(events), dtype=bool)})
 
+    print("We are in: ", __file__)
     # met filter selection
     # events, met_filter_results = self[met_filters](events, **kwargs)
     # TODO?: patch for the broken "Flag_ecalBadCalibFilter" MET filter in prompt data (tag set in config)
@@ -81,19 +81,19 @@ def default(
     # results += met_filter_results
 
 
-    # jet selection
-    events, jet_results = self[jet_selection](events, **kwargs)
-    results += jet_results
+    # # jet selection
+    # events, jet_results = self[jet_selection](events, **kwargs)
+    # results += jet_results
 
-    # electron selection
-    # events, electron_results = self[electron_selection](events, jet_results, **kwargs)
-    events, electron_results = self[electron_selection](events, **kwargs)
-    results += electron_results
+    # # electron selection
+    # # events, electron_results = self[electron_selection](events, jet_results, **kwargs)
+    # events, electron_results = self[electron_selection](events, **kwargs)
+    # results += electron_results
 
-    # muon selection
-    # events, muon_results = self[muon_selection](events, jet_results, electron_results, **kwargs)
-    events, muon_results = self[muon_selection](events, **kwargs)
-    results += muon_results
+    # # muon selection
+    # # events, muon_results = self[muon_selection](events, jet_results, electron_results, **kwargs)
+    # events, muon_results = self[muon_selection](events, **kwargs)
+    # results += muon_results
 
 
     # mc-only functions
@@ -113,10 +113,15 @@ def default(
 
         # TODO?: btag weights
 
-
+    print("The following steps were applied:", results.steps)
     # combined event selection after all steps
-    event_sel = reduce(and_, results.steps.values())
+    if results.steps:
+        event_sel = reduce(and_, results.steps.values())
+    else:
+        event_sel = np.ones(len(events), dtype=bool)
+    print(event_sel.shape, event_sel.sum()) 
     results.event = event_sel
+
     # increment stats
     # events, results = setup_and_increment_stats(
     #     self,

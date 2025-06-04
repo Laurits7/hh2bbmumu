@@ -4,11 +4,11 @@
 
 action() {
     # just lint
-    if [ ! -d "${BBMM_BASE}" ]; then
-        >&2 echo "BBMM_BASE not setup, skip linting"
-    elif [ "${BBMM_SKIP_POST_COMMIT}" != "1" ]; then
+    if [ ! -d "${HH2BBMUMU_BASE}" ]; then
+        >&2 echo "HH2BBMUMU_BASE not setup, skip linting"
+    elif [ "${HH2BBMUMU_SKIP_POST_COMMIT}" != "1" ]; then
         echo "post-commit linting ..."
-        bash "${BBMM_BASE}/tests/run_linting"
+        bash "${HH2BBMUMU_BASE}/tests/run_linting"
         echo
     fi
 

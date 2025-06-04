@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-setup_bbmm() {
+setup_hh2bbmumu() {
     # Runs the project setup, leading to a collection of environment variables starting with either
     #   - "CF_", for controlling behavior implemented by columnflow, or
-    #   - "BBMM_", for features provided by the analysis repository itself.
+    #   - "HH2BBMUMU_", for features provided by the analysis repository itself.
     # Check the setup.sh in columnflow for documentation of the "CF_" variables. The purpose of all
-    # "BBMM_" variables is documented below.
+    # "HH2BBMUMU_" variables is documented below.
     #
     # The setup also handles the installation of the software stack via virtual environments, and
     # optionally an interactive setup where the user can configure certain variables.
@@ -22,9 +22,9 @@ setup_bbmm() {
     #
     #
     # Variables defined by the setup and potentially required throughout the analysis:
-    #   BBMM_BASE
+    #   HH2BBMUMU_BASE
     #       The absolute analysis base directory. Used to infer file locations relative to it.
-    #   BBMM_SETUP
+    #   HH2BBMUMU_SETUP
     #       A flag that is set to 1 after the setup was successful.
 
     #
@@ -41,8 +41,8 @@ setup_bbmm() {
     # prevent repeated setups
     #
 
-    cf_export_bool BBMM_SETUP
-    if ${BBMM_SETUP} && ! ${CF_ON_SLURM}; then
+    cf_export_bool HH2BBMUMU_SETUP
+    if ${HH2BBMUMU_SETUP} && ! ${CF_ON_SLURM}; then
         >&2 echo "the hh2bbmumu analysis was already succesfully setup"
         >&2 echo "re-running the setup requires a new shell"
         return "1"
@@ -68,14 +68,14 @@ setup_bbmm() {
 
     #
     # global variables
-    # (BBMM = hh2bbmumu, CF = columnflow)
+    # (HH2BBMUMU = hh2bbmumu, CF = columnflow)
     #
 
     # start exporting variables
-    export BBMM_BASE="${this_dir}"
+    export HH2BBMUMU_BASE="${this_dir}"
     export CF_BASE="${cf_base}"
-    export CF_REPO_BASE="${BBMM_BASE}"
-    export CF_REPO_BASE_ALIAS="BBMM_BASE"
+    export CF_REPO_BASE="${HH2BBMUMU_BASE}"
+    export CF_REPO_BASE_ALIAS="HH2BBMUMU_BASE"
     export CF_SETUP_NAME="${setup_name}"
 
     # interactive setup
@@ -90,7 +90,7 @@ setup_bbmm() {
             # query specific variables
             # nothing yet ...
         }
-        cf_setup_interactive "${CF_SETUP_NAME}" "${BBMM_BASE}/.setups/${CF_SETUP_NAME}.sh" || return "$?"
+        cf_setup_interactive "${CF_SETUP_NAME}" "${HH2BBMUMU_BASE}/.setups/${CF_SETUP_NAME}.sh" || return "$?"
     fi
 
     # continue the fixed setup
@@ -104,7 +104,6 @@ setup_bbmm() {
 
     cf_setup_common_variables || return "$?"
 
-
     #
     # minimal local software setup
     #
@@ -112,52 +111,35 @@ setup_bbmm() {
     cf_setup_software_stack "${CF_SETUP_NAME}" || return "$?"
 
     # ammend paths that are not covered by the central cf setup
-    export PATH="${BBMM_BASE}/bin:${PATH}"
-    export PYTHONPATH="${BBMM_BASE}:${BBMM_BASE}/modules/cmsdb:${PYTHONPATH}"
+    export PATH="${HH2BBMUMU_BASE}/bin:${PATH}"
+    export PYTHONPATH="${HH2BBMUMU_BASE}:${HH2BBMUMU_BASE}/modules/cmsdb:${PYTHONPATH}"
 
     # initialze submodules
-    if [ -e "${BBMM_BASE}/.git" ]; then
+    if [ -e "${HH2BBMUMU_BASE}/.git" ]; then
         local m
-        for m in $( ls -1q "${BBMM_BASE}/modules" ); do
-            cf_init_submodule "${BBMM_BASE}" "modules/${m}"
+        for m in $( ls -1q "${HH2BBMUMU_BASE}/modules" ); do
+            cf_init_submodule "${HH2BBMUMU_BASE}" "modules/${m}"
         done
     fi
 
     #
-    # git hooks
+    # additional common cf setup steps
     #
 
-    if ! ${CF_REMOTE_ENV}; then
-        cf_setup_git_hooks || return "$?"
-    fi
+    cf_setup_post_install || return "$?"
 
     #
-    # law setup
-    #
-
-    export LAW_HOME="${LAW_HOME:-${BBMM_BASE}/.law}"
-    export LAW_CONFIG_FILE="${LAW_CONFIG_FILE:-${BBMM_BASE}/law.cfg}"
-
-    if ! ${CF_REMOTE_ENV} && which law &> /dev/null; then
-        # source law's bash completion scipt
-        source "$( law completion )" ""
-
-        # add completion to the claw command
-        complete -o bashdefault -o default -F _law_complete claw
-
-        # silently index
-        law index -q
-    fi
-
     # finalize
-    export BBMM_SETUP="true"
+    #
+
+    export HH2BBMUMU_SETUP="true"
 }
 
 main() {
     # Invokes the main action of this script, catches possible error codes and prints a message.
 
     # run the actual setup
-    if setup_bbmm "$@"; then
+    if setup_hh2bbmumu "$@"; then
         cf_color green "hh2bbmumu analysis successfully setup"
         return "0"
     else
@@ -168,6 +150,6 @@ main() {
 }
 
 # entry point
-if [ "${BBMM_SKIP_SETUP}" != "true" ]; then
+if [ "${HH2BBMUMU_SKIP_SETUP}" != "true" ]; then
     main "$@"
 fi
