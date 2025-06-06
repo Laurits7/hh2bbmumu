@@ -62,7 +62,6 @@ def default(
 ) -> tuple[ak.Array, SelectionResult]:
     # ensure coffea behavior
     events = self[attach_coffea_behavior](events, **kwargs)
-    print(len(events), " events in the input")
     # prepare the selection results that are updated at every step
     results = SelectionResult()
 
@@ -73,7 +72,6 @@ def default(
     else:
         results += SelectionResult(steps={"json": np.ones(len(events), dtype=bool)})
 
-    print("We are in: ", __file__)
     # met filter selection
     # events, met_filter_results = self[met_filters](events, **kwargs)
     # TODO?: patch for the broken "Flag_ecalBadCalibFilter" MET filter in prompt data (tag set in config)
@@ -81,19 +79,17 @@ def default(
     # results += met_filter_results
 
 
-    # # jet selection
-    # events, jet_results = self[jet_selection](events, **kwargs)
-    # results += jet_results
+    # jet selection
+    events, jet_results = self[jet_selection](events, **kwargs)
+    results += jet_results
 
-    # # electron selection
-    # # events, electron_results = self[electron_selection](events, jet_results, **kwargs)
-    # events, electron_results = self[electron_selection](events, **kwargs)
-    # results += electron_results
+    # electron selection
+    events, electron_results = self[electron_selection](events, **kwargs)
+    results += electron_results
 
-    # # muon selection
-    # # events, muon_results = self[muon_selection](events, jet_results, electron_results, **kwargs)
-    # events, muon_results = self[muon_selection](events, **kwargs)
-    # results += muon_results
+    # muon selection
+    events, muon_results = self[muon_selection](events, **kwargs)
+    results += muon_results
 
 
     # mc-only functions
@@ -113,28 +109,30 @@ def default(
 
         # TODO?: btag weights
 
-    print("The following steps were applied:", results.steps)
+
+    events = self[process_ids](events, **kwargs)
     # combined event selection after all steps
     if results.steps:
         event_sel = reduce(and_, results.steps.values())
     else:
         event_sel = np.ones(len(events), dtype=bool)
-    print(event_sel.shape, event_sel.sum()) 
     results.event = event_sel
 
+    print("kwargs:", kwargs)
+    print("process_ids:", events.process_id)
     # increment stats
-    # events, results = setup_and_increment_stats(
-    #     self,
-    #     events=events,
-    #     results=results,
-    #     stats=stats,
-    #     event_sel=event_sel,
-    #     event_sel_variations={},
-    #     njets=results.x.n_central_jets,
-    # )
+    events, results = setup_and_increment_stats(
+        self,
+        events=events,
+        results=results,
+        stats=stats,
+        event_sel=event_sel,
+        event_sel_variations={},
+        njets=results.x.n_central_jets,
+        **kwargs
+    )
 
     return events, results
-
 
 
 
@@ -216,15 +214,14 @@ def setup_and_increment_stats(
         #             weight_map[f"sum_{weight_name}_selected_{var_name}"] = (events[weight_name], var_sel)
         #             weight_map[f"sum_mc_weight_{weight_name}_selected_{var_name}"] = (events.mc_weight * events[weight_name], var_sel)  # noqa: E501
 
-        # TODO: groups
-        # group_map = {
-        #     **group_map,
-        #     # per process
-        #     "process": {
-        #         "values": events.process_id,
-        #         "mask_fn": (lambda v: events.process_id == v),
-        #     },
-        # }
+        group_map = {
+            **group_map,
+            # per process
+            "process": {
+                "values": events.process_id,
+                "mask_fn": (lambda v: events.process_id == v),
+            },
+        }
         # per jet multiplicity
         if njets is not None:
             group_map["njet"] = {
